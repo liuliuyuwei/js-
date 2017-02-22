@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+</html>
+<div class="b c">1</div>
+<div class="a c">2</div>
+<div class="a b">3</div>
+<script>
+
+    (function () {
+        function Sizzle(selector) {
+            return document.querySelectorAll(selector);
+        }
+
+        function isLikeArray(data) {
+            if(jQuery.isFunction(data) || data == window){
+                return false;
+            }
+            if(jQuery.type(data.length) === "number" && data.length>=0 && data.length-1 in data){
+                return true;
+            }
+        }
+        //判断数据类型
+        var class2type = {};
+        var type = "Number Boolean String Function Date RegExp Math Array Object".split(" ");
+        for(var i=0; i<type.length; i++){
+            class2type["[object "+type[i]+"]"] = type[i].toLowerCase();
+        }
+
+        function jQuery(selector) {
+            return new jQuery.fn.init(selector)
+        }
+        jQuery.fn = jQuery.prototype = {
+            constructor:jQuery,
+            init:function (selector) {
+                var arr = [];
+                var push = arr.push;
+                var splice = arr.splice;
+                splice.call(this,0,this.length);
+                if(jQuery.isString(selector)){
+                    push.apply(this,Sizzle(selector));
+                }else{
+                    push.call(this,selector);
+                }
+
+                return this;
+            },
+            css:function (styleName,styleValue) {
+                for(var i=0; i<this.length; i++){
+                    this[i].style[styleName] = styleValue;
+                }
+                return this;
+            }
+        };
+        jQuery.fn.extend = jQuery.extend = function () {
+            var target,source =[],arg0 = arguments[0];
+            if(arguments.length === 1){
+                target = this;
+                source.push(arg0);
+
+            }  else{
+                target = arg0;
+                for(var i=0; i<arguments.length; i++){
+                    source.push(arguments[i]);
+                }
+
+            }
+            for(var i=0; i<source.length; i++){
+                for(var key in source[i]){
+                    target[key] = source[i][key]
+                }
+            }
+
+        };
+
+        jQuery.extend({
+            isFunction:function (fn) {
+                return jQuery.type(fn) === "function"
+            },
+            isString:function (str) {
+                return jQuery.type(str) === "string"
+            },
+            isArray:function (array) {
+                return Array.isArray?Array.isArray(array):jQuery.type(array) === "array";
+            },
+            type:function (data) {
+//                第一种方法
+//                 var result = Object.prototype.toString.call(data);
+//                result = result.replace("[object ","").replace("]","").toLowerCase();
+//                第二种方法
+//                result = result.replace(/\[object\s|\]/g,"").toLowerCase();
+//                return result;
+//                第三种方法
+                return class2type[Object.prototype.toString.call(data)]
+            },
+            each:function (array,callback) {
+                if(isLikeArray(array)){
+                    var i, len=array.length;
+                    for(i=0; i<len;){
+                        if(callback.call(array[i],i,array[i++]) ===false) break;
+                    }
+                }else{
+                    for(i in array){
+                        if(callback.call(array[i],i,array[i]) ===false) break;
+                    }
+                }
+            },
+            map:function (array,callback) {
+                if(isLikeArray(array)){
+                    var newArr = [];
+                    for(var i=0; i<array.length; i++){
+                        newArr.push(callback.call(array[i],i,array[i]))
+                    }
+                }else{
+                    for(var i in array){
+                        newArr.push(callback.call(array[i],i,array[i]))
+                    }
+                }
+                return newArr;
+            },
+            error:function (info) {
+                throw new Error(info);
+            },
+            merge:function (target,source) {
+                var len = target.length;
+                $.each(source,function (i,v) {
+                    target[len++] = v;
+                });
+                target.length = len;
+                return target;
+            },
+            makeArray:function (data) {
+                return isLikeArray(data) && !jQuery.isString(data)?jQuery.merge([],data):[data];
+            },
+            trim:function (data) {
+                return data.replace(/^\s+|\s+$/g,"");
+            }
+        });
+        jQuery.fn.extend({
+            each:function (callback) {
+                jQuery.each(this,callback);
+                return this;
+            },
+            css:function () {
+                var argLen = arguments.length,arg0 = arguments[0],
+                        arg1 = arguments[1];
+                if(argLen==0) return this;
+                if(argLen==1){
+                    if(jQuery.isString(arg0)){
+
+                        return window.getComputedStyle(this[0],null)[arg0]
+
+                    }else{
+                        this.each(function () {
+                            var dom = this;
+                            $.each(arg0,function (styleName,styleValue) {
+                                dom.style[styleName] = styleValue;
+                            })
+                        })
+                    }
+                }else{
+                    this.each(function () {
+                        this.style[arg0] = arg1;
+                    })
+                }
+            },
+            show:function () {
+
+                this.css("display","block");
+                return this;
+            },
+            map:function (callback) {
+                return jQuery.map(this,callback)
+            },
+            hide:function () {
+
+                this.css("display","none");
+                return this;
+            },
+            toggle:function () {
+                this.each(function () {
+                    $(this).css("display")==="none"?$(this).css("display","block"):$(this).css("display","none");
+                });
+
+            },
+            attr:function () {
+                var arg0 = arguments[0],arg1 = arguments[1],
+                        argLen = arguments.length,
+                firstDom = this[0];
+                if(argLen == 0) return this;
+                if(argLen == 1){
+                    if(jQuery.isString(arg0)){
+
+                           return firstDom.getAttribute(arg0);
+
+                    }else{
+                        this.each(function () {
+                            var dom = this;
+                            $.each(arg0,function (name,value) {
+                                dom.setAttribute(name,value);
+                            })
+                        });
+                        return this;
+                    }
+                }else{
+                    return this.each(function () {
+                        this.setAttribute(arg0,arg1);
+                    })
+                }
+            },
+            removeAttr:function (attrName) {
+                return this.each(function () {
+                    this.removeAttribute(attrName)
+                })
+            },
+            prop:function () {
+                var arg0 = arguments[0],arg1 = arguments[1],
+                        argLen = arguments.length,
+                        firstDom = this[0];
+                if(argLen == 0) return this;
+                if(argLen == 1){
+                    if(jQuery.isString(arg0)){
+
+                            return firstDom[arg0];
+                        
+                    }else{
+                        this.each(function () {
+                            var dom = this;
+                            $.each(arg0,function (name,value) {
+                                dom[name] = [value];
+                            })
+                        });
+                        return this;
+                    }
+                }else{
+                    return this.each(function () {
+                        this[arg0] =[arg1];
+                    })
+                }
+            },
+            get:function (index) {
+                return index==null?jQuery.makeArray(this):(index>=0?this[index]:this[this.length+index]);
+            },
+            hasClass:function (className) {
+                var result = false;
+                var arrClassName = className.split(" ");
+                this.each(function () {
+                    var classNameChange= " "+this.className+" ";
+                    $.each(arrClassName,function () {
+                        if(classNameChange.indexOf(" "+this+" ")!=-1){
+                            result = true;
+                            return false
+                        }
+                    })
+                })
+                return result;
+            }
+            addClass:function (className) {
+                var arrClassName = className.split(" ");
+               return this.each(function () {
+                    var dom =this;
+                    var $this = $(this);
+                    $.each(arrClassName,function () {
+                       if(!$this.hasClass(this)){
+                           dom.className+=" "+this;
+                       }
+                    })
+                })
+            },
+            removeClass:function (className) {
+                var arrClassName = className.split(" ");
+               return this.each(function () {
+                    var domClassName = this.className;
+                    var domClassNameChange = " "+this.className+" ";
+                    $.each(arrClassName,function () {
+                        domClassNameChange = domClassNameChange.replace(" "+this+" "," ")
+                    });
+                    this.className = domClassNameChange
+                })
+            },
+            toggleClass:function (className) {
+                var arrClassName = className.split(" ");
+                return this.each(function () {
+                    var $this = $(this);
+                    $.each(arrClassName,function () {
+                        $this.hasClass(this)?$this.removeClass(this):$this.addClass(this);
+                    })
+                })
+            }
+        });
+
+
+        jQuery.fn.init.prototype = jQuery.fn;
+
+        window.$ = window.jQuery = jQuery;
+
+    })();
+
+    $("div").toggleClass("b")
+
+</script>

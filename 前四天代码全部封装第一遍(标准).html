@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div class="bbb ccc">1</div>
+<div class="aaa ccc">2</div>
+<div class="aaa bbb">3</div>
+</body>
+</html>
+<script>
+    (function () {
+        //准备一些方法
+        var arr = [];
+        var push = arr.push;
+        var splice = arr.splice;
+        //为type方法做的准备
+        var class2type = {};
+        var type = "Number String Boolean Function Array Object RegExp Math Date".split(" ");
+        for(var i=0; i<type.length; i++){
+            class2type["[object "+type[i]+"]"] = type[i].toLowerCase();
+        }
+        //判断是否是数组或者伪数组
+        function isLikeArray(obj) {
+            if(jQuery.isFunction(obj)||obj == window){
+                return false;
+            }
+            if(jQuery.type(obj.length)=="number"&&obj.length>=0&&obj.length-1 in obj){
+                return true;
+            }
+        }
+
+        //选择器引擎
+        function Sizzle(selector) {
+            return document.querySelectorAll(selector);
+        }
+        //jQuery函数
+        function jQuery(selector){
+            return new jQuery.fn.init(selector)
+        }
+        //jQuery的原型
+        jQuery.fn = jQuery.prototype = {
+            constructor:jQuery,
+            //init入口函数
+            init:function (selector) {
+                //清空之前的init实例
+                splice.call(this,0,this.length);
+                if(jQuery.isString(selector)){
+                    //把传入的选择器填加到init实例中
+                    push.apply(this,Sizzle(selector));
+                }else{
+                    push.call(this,selector);
+                }
+                return this;
+            }
+        };
+        //封装jQuery函数中和jQuery原型中的extend方法
+        jQuery.fn.extend = jQuery.extend = function () {
+            var argLen = arguments.length, arg0 = arguments[0],
+                    arg1 = arguments[1];
+            if(argLen == 1){
+                for(var key in arg0){
+                    this[key] = arg0[key];
+                }
+            }else{
+                for(var i=0; i<argLen; i++){
+                    for(var key in arguments[i]){
+                        arg0[key] = arguments[i][key];
+                    }
+                }
+            }
+            return this;
+        };
+
+        //封装工具类方法
+        jQuery.extend({
+            isString:function (str) {
+                return jQuery.type(str) == "string";
+            },
+            isFunction:function (fn) {
+                return jQuery.type(fn) == "function";
+            },
+            isArray:function (array) {
+                return Array.isArray?Array.isArray(array):jQuery.type(array) == "array";
+            },
+            type:function (data) {
+                return data==undefined?String(data):class2type[Object.prototype.toString.call(data)];
+           },
+            each:function (array,callback) {
+                if(isLikeArray(array)){
+                    for(var i=0;i<array.length; i++){
+                        if(callback.call(array[i],i,array[i]) == false) break;
+                    }
+                }else{
+                    for(var i in array){
+                        if(callback.call(array[i],i,array[i]) == false) break;
+                    }
+                }
+            },
+            map:function (array,callback) {
+                var newArr = [];
+                if(isLikeArray(array)){
+                    for(var i=0;i<array.length; i++){
+                        newArr.push(callback.call(array[i],i,array[i]));
+                    }
+                }else{
+                    for(var i in array){
+                        newArr.push(callback.call(array[i],i,array[i]));
+                    }
+                }
+                return newArr;
+            },
+            trim:function (data) {
+                return data.replace(/^\s+|\s+$/g,"");
+            },
+            merge:function (target,source) {
+                var len = target.length;
+                $.each(source,function (i,v) {
+                    target[len++] = v
+                });
+                target.length = len;
+                return target;
+            },
+            makeArray:function (data) {
+
+                if(isLikeArray(Object(data)) && !jQuery.isString(data)){
+                    return $.merge([],data);
+
+                }else{
+                    return [data];
+                }
+            },
+            error:function (info) {
+                throw new Error(info);
+            }
+        });
+        //封装操作init实例的方法
+        jQuery.fn.extend({
+            each:function (callback) {
+                jQuery.each(this,callback);
+                return this;
+            },
+            map:function (callback) {
+                return jQuery.map(this,callback)
+            },
+            css:function () {
+                var argLen = arguments.length, arg0 = arguments[0],
+                        arg1 = arguments[1];
+                if(argLen == 0) return this;
+                if(argLen == 1){
+                    if(jQuery.isString(arg0)){
+                        //获取类样式
+                        return window.getComputedStyle(this[0],null)[arg0];
+                    }else{
+                        //设置多个类样式
+                        return this.each(function () {
+                            var doms = this;
+                            $.each(arg0,function (styleName,styleValue) {
+                                doms.style[styleName] = styleValue;
+                            })
+                        })
+                    }
+                }else{
+                    //设置一个类样式
+                    return this.each(function () {
+                        this.style[arg0] = arg1;
+                    });
+                }
+            },
+            show:function () {
+                return this.each(function () {
+                    $(this).css("display","block");
+                })
+            },
+            hide:function () {
+                return this.each(function () {
+                    $(this).css("display","none");
+                })
+            },
+            toggle:function () {
+                return this.each(function () {
+                    var result = $(this).css("display")=="block"?"hide":"show";
+                    $(this)[result]();
+                })
+            },
+            get:function (index) {
+                if(index==undefined){
+                    return jQuery.makeArray(this);
+                }
+                if(index>=0){
+                    return this[index];
+                }else{
+                    return this[this.length+index];
+                }
+            },
+            attr:function () {
+                var argLen = arguments.length,arg0 = arguments[0],
+                        arg1 = arguments[1];
+                if(argLen == 1){
+                    if(jQuery.isString(arg0)){
+                        //获取属性
+                        return this[0].getAttribute(arg0)
+                    }else{
+                        //设置多个属性
+                        return this.each(function () {
+                            var dom = this;
+                            $.each(arg0,function (attrName,attrValue) {
+                                dom.setAttribute(attrName,attrValue);
+                            })
+                        })
+                    }
+                }else{
+                    //设置一个属性
+                    return this.each(function () {
+                        this.setAttribute(arg0,arg1);
+                    })
+                }
+            },
+            removeAttr:function (attrName) {
+                return this.each(function () {
+                    this.removeAttribute(attrName);
+                })
+            },
+            prop:function () {
+                var argLen = arguments.length,arg0 = arguments[0],
+                        arg1 = arguments[1];
+                if(argLen == 1){
+                    if(jQuery.isString(arg0)){
+                        //获取属性
+                        return this[0][arg0]
+                    }else{
+                        //设置多个属性
+                        return this.each(function () {
+                            var dom = this;
+                            $.each(arg0,function (attrName,attrValue) {
+                                dom[attrName] = [attrValue];
+                            })
+                        })
+                    }
+                }else{
+                    //设置一个属性
+                    return this.each(function () {
+                        this[arg0] = [arg1];
+                    })
+                }
+            },
+            hasClass:function (className) {
+                var result = false;
+                var arrClassName = className.split(" ");
+                this.each(function () {
+                    var classNameChange= " "+this.className+" ";
+                    $.each(arrClassName,function () {
+                        if(classNameChange.indexOf(" "+this+" ")!=-1){
+                            result = true;
+                            return false
+                        }
+                    })
+                });
+                return result;
+            },
+            addClass:function (className) {
+                var arrClassName = className.split(" ");
+                return this.each(function () {
+                    var dom = this;
+                    var $this = $(this);
+                    $.each(arrClassName,function () {
+                        if(!$this.hasClass(this)){
+                            dom.className += " "+this
+                        }
+                    });
+
+                })
+            },
+            removeClass:function () {
+                if(arguments.length == 0){
+                    //删除全部的类样式名
+                    return this.each(function () {
+                        this.className = ""
+                    })
+                }else{
+                    //设置一个或者多个类样式名
+                    var arrClassName = arguments[0].split(" ");
+                    return this.each(function () {
+                        var dom = this;
+                        var classNameChange = " "+this.className+" "
+                        $.each(arrClassName,function () {
+                           classNameChange = classNameChange.replace(" "+this+" "," ")
+                        });
+                        this.className = classNameChange;
+                    })
+                }
+            },
+            toggleClass:function () {
+                var arrClassName = arguments[0].split(" ");
+                return this.each(function () {
+                    var $this = $(this);
+                    $.each(arrClassName,function () {
+                        $this[$this.hasClass(this)?"removeClass":"addClass"](this);
+//                        $this.hasClass(this)?$this.removeClass(this):$this.addClass(this);
+                    })
+                })
+            }
+        });
+
+        //init的原型指向jQuery的原型
+        jQuery.fn.init.prototype = jQuery.fn;
+        //暴露两个接口
+        window.$ = window.jQuery = jQuery;
+    })();
+
+</script>
